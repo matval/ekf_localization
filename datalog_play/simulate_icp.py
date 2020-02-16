@@ -16,7 +16,7 @@ from icp2 import icp
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1, '../GPS_INS_LiDAR_fusion')
 
-from estimate_states import *
+from ekf import *
 
 exec(open("setup.py").read())
 

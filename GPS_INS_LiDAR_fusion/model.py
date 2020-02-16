@@ -25,9 +25,6 @@ States:
     - b_gyro
     - b_accel_x
     - b_accel_y
-    - delta x
-    - delta y
-    - delta psi
 '''
 
 class Model:
