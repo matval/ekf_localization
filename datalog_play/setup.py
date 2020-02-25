@@ -29,11 +29,11 @@ else:
 
 exp = 'leakey_Plot_unknown_Row_209_2019-07-25'
 
-directory = r'C:\Users\mat_v\Desktop\Terra Sentia Collections\2019'
-exp = 'leakey_Plot_unknown_Row_209_2019-07-25'
-
 directory = r'C:\Users\mat_v\Desktop\Terra Sentia Collections\corn entrance TS data'
 exp = 'collection-230818_131918_gpsentering_Plot_unknown_Row_unknown_2018-08-23'
+
+directory = r'C:\Users\mat_v\Desktop\Terra Sentia Collections\2019'
+exp = 'leakey_Plot_unknown_Row_209_2019-07-25'
 
 
 logs = ImportedData(directory)

@@ -11,6 +11,9 @@ from utils import *
 RM = 6335439 # meters
 RN = 6399594 # meters
 h = 222 # meters
+max_vel = 2.0 # m/s
+std_dev_gyro = 0.2
+std_dev_accel = 0.5
 
 '''
 States:
@@ -30,19 +33,10 @@ States:
 class Model:
     def __init__(self, init_x):
         self.n_states = init_x.shape[0]
-        self.Q = np.eye(init_x.shape[0])
-        self.Q[0,0] = 0.1**2
-        self.Q[1,1] = 0.1**2
-        self.Q[2,2] = 0.1**2
-        self.Q[3,3] = 0.1**2
-        self.Q[5,5] = 0.1**2
-        self.Q[8,8] = 0.1**2
-        self.Q[9,9] = 0.1**2
-        self.Q[10,10] = 0.1**2
         
         self.R = np.eye(2)
-        self.R[0,0] = 0.2**2
-        self.R[0,0] = 0.2**2
+        self.R[0,0] = 0.1**2
+        self.R[0,0] = 0.1**2
     
     def mechanization(self, x, u, dt):
         '''
@@ -69,7 +63,8 @@ class Model:
         # psi (heading) -> Constraint angle
         x[4,0] = constrainAngle( x[4,0] + x[7,0]*dt )
         # x velocity
-        x[5,0] = x[5,0] + (u[0,0] - x[9,0])*dt
+        x[5,0] = x[5,0] + (u[0,0] - x[9,0])*dt if abs(x[5,0] + (u[0,0] - x[9,0])*dt) < max_vel else max_vel*np.sign(x[5,0] + (u[0,0] - x[9,0]))
+        #x[5,0] = x[5,0] + (u[0,0] - x[9,0])*dt
         # y velocity
         x[6,0] = x[6,0] + (u[1,0] - x[10,0])*dt
         # omega
@@ -111,7 +106,7 @@ class Model:
         # Omega
         F[7,8] = -1
         
-        return np.eye(x.shape[0]) + F*dt
+        return (np.eye(x.shape[0]) + F*dt)
     
 
     def H(self, sensor):
@@ -127,6 +122,21 @@ class Model:
         
         return H
     
+    def Q(self, dt):
+        Q = np.eye(self.n_states)
+        Q[0,0] = std_dev_accel**2 * dt**2 / (RM+h)
+        Q[1,1] = std_dev_accel**2 * dt**2 / (RN+h)
+        Q[2,2] = std_dev_accel**2 * dt**2
+        Q[3,3] = std_dev_accel**2 * dt**2
+        Q[4,4] = std_dev_gyro**2 * dt**2
+        Q[5,5] = std_dev_accel**2 * dt
+        Q[6,6] = std_dev_accel**2 * dt
+        Q[7,7] = std_dev_gyro**2 * dt
+        Q[8,8] = std_dev_gyro**2
+        Q[9,9] = std_dev_accel**2
+        Q[10,10] = std_dev_accel**2
+        
+        return Q
     '''
     Read Measurements
     '''

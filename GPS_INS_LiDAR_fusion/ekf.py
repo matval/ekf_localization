@@ -15,10 +15,12 @@ States:
     - x
     - y
     - theta
-    - v
+    - v_x
+    - v_y
     - omega
     - b_gyro
-    - b_accel
+    - b_accel_x
+    _ b_accel_y
 '''
 class EKF:
     def __init__(self, init_x, init_P, timestamp):
@@ -45,13 +47,13 @@ class EKF:
         
         # Predicted covariance estimate
         FT = self.robot.F(self.x, dt).T
-        self.P = np.dot(self.robot.F(self.x, dt), np.dot(self.P, FT)) + self.robot.Q
+        self.P = np.dot(self.robot.F(self.x, dt), np.dot(self.P, FT)) + self.robot.Q(dt)
         
         return self.x, self.P
     
     # EKF update step
     def update(self, z, sensor):
-        y = z - np.dot(self.robot.H(sensor), self.x) - np.dot(self.robot.H(sensor), self.errx)
+        y = z - np.dot(self.robot.H(sensor), self.x) + np.dot(self.robot.H(sensor), self.errx)
         #y = z - np.dot(self.robot.H(), self.x)
         S = np.dot(self.robot.H(sensor), np.dot(self.P, self.robot.H(sensor).T)) + self.robot.R
         K = np.dot(self.P, np.dot(self.robot.H(sensor).T, np.linalg.inv(S)))

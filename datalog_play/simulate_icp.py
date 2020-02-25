@@ -4,7 +4,10 @@ Created on Fri Jan 31 10:54:23 2020
 
 @author: mat_v
 """
+
+#### Imports
 import time, sys
+import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from bisect import bisect_left, bisect_right
 
@@ -17,7 +20,14 @@ from icp2 import icp
 sys.path.insert(1, '../GPS_INS_LiDAR_fusion')
 
 from ekf import *
+from sensor_yaml_reader import *
 
+# insert at 1, 0 is the script path (or '' in REPL)
+sys.path.insert(1, '../../local_planner')
+
+from local_planner_class import *
+
+# Prepare data
 exec(open("setup.py").read())
 
 # Close all figures
@@ -55,6 +65,10 @@ success, image = vidcap.read()
 
 lidar_image = np.zeros([720, 1280, 3], dtype=np.uint8)
 final_frame = cv2.hconcat((image, lidar_image))
+
+# Open resizible window
+cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
+cv2.resizeWindow('frame', 1920, 540)
 cv2.imshow('frame', final_frame)
 
 auto = False
@@ -81,6 +95,7 @@ imu_accel = np.empty([0])
 input_ins = np.zeros([6,1])
 init_P = np.eye(ins_est.shape[0])*10
 ekf_filter = EKF(initial_x, init_P, init_timestamp)
+local_planner = LocalPlanner()
 
 
 print('Q: quit')
@@ -88,15 +103,20 @@ print('Space: auto-play')
 print('\u2192: next frame')
 print('\u2190: previous frame')
 
+# 2018 datalogs
+datalog_uptime = '    (1)uptime  (ms)'
+mhe_output_x = '(14)mhe output x  (m)'
+mhe_output_y = '(15)mhe output y  (m)'
+
 # 2019 datalogs
 datalog_uptime = '     (1)uptime (ms)'
 mhe_output_x = '(14)mhe output x (m)'
 mhe_output_y = '(15)mhe output y (m)'
 
-# 2018 datalogs
-datalog_uptime = '    (1)uptime  (ms)'
-mhe_output_x = '(14)mhe output x  (m)'
-mhe_output_y = '(15)mhe output y  (m)'
+
+imu_config_path = r"C:\Users\mat_v\daslab\python\ES_EKF\GPS_INS_LiDAR_fusion\sensors_config\imu0\sensor.yaml"
+
+imu_config = Sensor(imu_config_path)
 
 while success:
     
@@ -176,7 +196,7 @@ while success:
         
         t = t[np.newaxis].T
         
-        if(num_points < 400 or mean_error > 0.05 or frame == 0):
+        if(num_points < 500 or mean_error > 0.05 or frame == 0):
             R = np.eye(2)
             t = np.zeros([2,1])
         
@@ -203,20 +223,24 @@ while success:
         Estimate States using INS
         '''        
         if(np.abs(datalog['(26)accelerometer x (m/s^2)'].values[datalog_idx]) < 2):
-            input_ins[0,0] = 0.1*input_ins[0,0] + 0.8*datalog['(26)accelerometer x (m/s^2)'].values[datalog_idx]            
+            input_ins[0,0] = 0.4*input_ins[0,0] + 0.7*datalog['(26)accelerometer x (m/s^2)'].values[datalog_idx]            
             
         if(np.abs(datalog['(29)gyro yaw rate (rad/s)'].values[datalog_idx]) < 5):
-            input_ins[5,0] = 0.1*input_ins[5,0] + 0.8*datalog['(29)gyro yaw rate (rad/s)'].values[datalog_idx]
+            input_ins[5,0] = 0.2*input_ins[5,0] + 0.8*datalog['(29)gyro yaw rate (rad/s)'].values[datalog_idx]
         
         ekf_est, P_ekf = ekf_filter.predict(input_ins, timestamp)
         
-        dt = (timestamp - cam_datalog[frame-1])/1000
+        if frame > 0:
+            dt = (timestamp - cam_datalog[frame-1])/1000
+        else:
+            dt = 0
         
         # Verifies if ICP measurements were given to update the EKF
-        if(num_points > 400 and mean_error < 0.05 and frame > 0):
+        if(num_points > 500 and mean_error < 0.05 and frame > 0):
             icp_meas = np.array([[dy/dt], [dtheta/dt]])
             ekf_est, P_ekf = ekf_filter.update(icp_meas, 'icp')
         
+        '''
         # Verifies if GNSS measurements were given to update the EKF
         if(datalog['(22)primary gps latitude (deg)'].values[datalog_idx] != datalog['(22)primary gps latitude (deg)'].values[datalog_idx-1] \
                    and datalog['(23)primary gps longitude (deg)'].values[datalog_idx] != datalog['(23)primary gps longitude (deg)'].values[datalog_idx-1] \
@@ -225,9 +249,35 @@ while success:
             lon = datalog['(23)primary gps longitude (deg)'].values[datalog_idx]
             gnss_meas = np.array([[lat], [lon]])
             ekf_est, P_ekf = ekf_filter.update(gnss_meas, 'gnss')
-        
-        print('estimated stated:\n', ekf_est)
+        '''
+        print('estimated states:\n')
+        print('latitude:', ekf_est[0,0])
+        print('longitude:', ekf_est[1,0])
+        print('x:\t', ekf_est[2,0])
+        print('y:\t', ekf_est[3,0])
+        print('psi:\t', ekf_est[4,0])
+        print('v_x:\t', ekf_est[5,0])
+        print('v_y:\t', ekf_est[6,0])
+        print('omega:\t', ekf_est[7,0])
+        print('gyro_bias:', ekf_est[8,0])
+        print('accel_bias_x:', ekf_est[9,0])
+        print('accel_bias_y:', ekf_est[10,0])
         #ins_est = estimator.mechanization(input_ins, error_ekf, timestamp)
+        
+        
+        '''
+        Calculate local planner map
+        '''
+        l_dist = perception_datalog['distance_left'][lidar_idx]
+        l_angle = perception_datalog['slope_l'][lidar_idx]
+        l_valid = perception_datalog['valid_l'][lidar_idx]
+        r_dist = perception_datalog['distance_right'][lidar_idx]
+        r_angle = perception_datalog['slope_r'][lidar_idx]
+        r_valid = perception_datalog['valid_r'][lidar_idx]
+        
+        local_planner.calculate_route(l_dist, l_angle, l_valid, r_dist, r_angle, r_valid)
+        local_map = local_planner.getLocalMap()
+        
         
         ekf_x = np.append(ekf_x, ekf_est[2,0])
         ekf_y = np.append(ekf_y, ekf_est[3,0])
@@ -235,8 +285,8 @@ while success:
         ins_y = np.append(ins_y, 0)
         lidar_omega = np.append(lidar_omega, dtheta/dt)
         ts_arr = np.append(ts_arr, timestamp)
-        imu_omega = np.append(imu_omega, input_ins[0,0])
-        imu_accel = np.append(imu_accel, input_ins[5,0])
+        imu_accel = np.append(imu_accel, input_ins[0,0])
+        imu_omega = np.append(imu_omega, input_ins[5,0])
         
         
         if success:
@@ -266,8 +316,12 @@ while success:
         l1 = subplot3.scatter(lidar_XY[0,:], lidar_XY[1,:], 1.5, 'r')
         l2 = subplot3.scatter(last_XY[0,:], last_XY[1,:], 1.5, 'b')
         l3 = subplot3.scatter(rot_last_lidar[0,:], rot_last_lidar[1,:], 1.5, 'orange')
-        subplot3.set_ylim([-10.0, 10.0])
-        subplot3.set_xlim([-10.0, 10.0])
+        
+        
+        subplot3.imshow(local_map, extent=[-1, 1, 0, 2])
+        
+        subplot3.set_ylim([-3.0, 3.0])
+        subplot3.set_xlim([-3.0, 3.0])
         subplot3.legend([l1, l2, l3], ['Current Lidar', 'Last Lidar', 'Corrected Last Lidar'], loc="upper left")
         
         subplot4.title.set_text('Robot Position Estimate')
@@ -276,6 +330,7 @@ while success:
         p3, = subplot4.plot(ekf_x, ekf_y)
         p4, = subplot4.plot(ins_x, ins_y)
         subplot4.legend([p1, p4, p2, p3], ['ICP Estimate', 'INS Estimate' ,'MHE Estimate', 'Error State EKF'], loc="upper left")
+        subplot4.set_aspect('equal', adjustable='box')
         
         fig.canvas.draw_idle()
         fig2.canvas.draw_idle()
