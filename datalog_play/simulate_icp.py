@@ -23,7 +23,7 @@ from ekf import *
 from sensor_yaml_reader import *
 
 # insert at 1, 0 is the script path (or '' in REPL)
-sys.path.insert(1, '../../local_planner')
+sys.path.insert(1, '../local_planner')
 
 from local_planner_class import *
 
@@ -82,7 +82,6 @@ initial_x = np.zeros([11,1])
 ins_est = np.zeros([11,1])
 initial_x[0,0] = datalog['(22)primary gps latitude (deg)'].values[0]
 initial_x[1,0] = datalog['(23)primary gps longitude (deg)'].values[0]
-initial_x[9,0] = 0.0
 #estimator = Estimator(initial_x, init_timestamp)
 ts_arr = np.empty([0])
 ins_x = np.empty([0])
@@ -93,7 +92,10 @@ lidar_omega = np.empty([0])
 imu_omega = np.empty([0])
 imu_accel = np.empty([0])
 input_ins = np.zeros([6,1])
-init_P = np.eye(ins_est.shape[0])*10
+init_P = np.eye(ins_est.shape[0])*100
+init_P[2,2] = 0
+init_P[3,3] = 0
+
 ekf_filter = EKF(initial_x, init_P, init_timestamp)
 local_planner = LocalPlanner()
 
@@ -107,12 +109,15 @@ print('\u2190: previous frame')
 datalog_uptime = '    (1)uptime  (ms)'
 mhe_output_x = '(14)mhe output x  (m)'
 mhe_output_y = '(15)mhe output y  (m)'
+ang_left = 'angl'
+ang_right = 'angr'
 
 # 2019 datalogs
 datalog_uptime = '     (1)uptime (ms)'
 mhe_output_x = '(14)mhe output x (m)'
 mhe_output_y = '(15)mhe output y (m)'
-
+ang_left = 'slope_l'
+ang_right = 'slope_r'
 
 imu_config_path = r"C:\Users\mat_v\daslab\python\ES_EKF\GPS_INS_LiDAR_fusion\sensors_config\imu0\sensor.yaml"
 
@@ -240,7 +245,7 @@ while success:
             icp_meas = np.array([[dy/dt], [dtheta/dt]])
             ekf_est, P_ekf = ekf_filter.update(icp_meas, 'icp')
         
-        '''
+        
         # Verifies if GNSS measurements were given to update the EKF
         if(datalog['(22)primary gps latitude (deg)'].values[datalog_idx] != datalog['(22)primary gps latitude (deg)'].values[datalog_idx-1] \
                    and datalog['(23)primary gps longitude (deg)'].values[datalog_idx] != datalog['(23)primary gps longitude (deg)'].values[datalog_idx-1] \
@@ -249,7 +254,7 @@ while success:
             lon = datalog['(23)primary gps longitude (deg)'].values[datalog_idx]
             gnss_meas = np.array([[lat], [lon]])
             ekf_est, P_ekf = ekf_filter.update(gnss_meas, 'gnss')
-        '''
+        
         print('estimated states:\n')
         print('latitude:', ekf_est[0,0])
         print('longitude:', ekf_est[1,0])
@@ -269,10 +274,10 @@ while success:
         Calculate local planner map
         '''
         l_dist = perception_datalog['distance_left'][lidar_idx]
-        l_angle = perception_datalog['slope_l'][lidar_idx]
+        l_angle = perception_datalog[ang_left][lidar_idx]
         l_valid = perception_datalog['valid_l'][lidar_idx]
         r_dist = perception_datalog['distance_right'][lidar_idx]
-        r_angle = perception_datalog['slope_r'][lidar_idx]
+        r_angle = perception_datalog[ang_right][lidar_idx]
         r_valid = perception_datalog['valid_r'][lidar_idx]
         
         local_planner.calculate_route(l_dist, l_angle, l_valid, r_dist, r_angle, r_valid)
