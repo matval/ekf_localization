@@ -14,32 +14,32 @@ To install Eigen3:
 sudo apt install libeigen3-dev
 ```
 
-### This project implements the Error-State Extended Kalman Filter (ES-EKF) to localize a vehicle (TerraSentia robot) in a crop.
+### This project implements the Extended Kalman Filter (EKF) to localize a vehicle using GPS, IMU and Wheel Encoders
 
 - The data set contains measurements from different sensors on a moving robot.
-- The sensor measuremets consists of an IMU, a GNSS receiver, and a LiDAR, all of which provide measurements of varying reliability and at different rates.
+- The sensor measuremets consists of an IMU, a GNSS receiver, and an IMU.
 
-- The goal is to implement a state estimator that fuses the available sensor measurements to provide a reasonable estimate of the vehicle's pose and velocity. Specifically, we will be implementing the Error-State Extended Kalman Filter.
+- The goal is to implement a state estimator that fuses the available sensor measurements to provide a reasonable estimate of the vehicle's pose and velocity.
 
-- In the main filter loop, you will first update the state and the uncertainty using IMU readings.
-
-- Whenever a GNSS or LiDAR measurement becomes available, it will execute the appropriate gain computation, error state, and covariance updates.
-
-## Solution Approach
-States:
-    - lat
-    - lon
+### Outputs States
     - x
     - y
-    - theta
+    - z
+    - quaternions (w, x, y, z)
     - vx
     - vy
-    - omega
-    - b_gyro
+    - vz
+    - angular_rate_x
+    - angular_rate_y
+    - angular_rate_z
+    - b_gyro_x
+    - b_gyro_y
+    - b_gyro_z
     - b_accel_x
     - b_accel_y
+    - b_accel_z
 
-## Running 
+### How to test the code
 
-- To run the simulation, simply run the **simulate_icp.py** script in the **datalog_play** folder.
+- TODO
 
