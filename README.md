@@ -10,14 +10,11 @@ Follow [this link](http://wiki.ros.org/ROS/Installation) to install ROS
 
 
 To install Eigen3:
-'''
+´´´
 sudo apt install libeigen3-dev
-'''
+´´´
 
-
-<p>
-This project implements the Error-State Extended Kalman Filter (ES-EKF) to localize a vehicle (TerraSentia robot) in a crop.
-</p>
+### This project implements the Error-State Extended Kalman Filter (ES-EKF) to localize a vehicle (TerraSentia robot) in a crop.
 
 - The data set contains measurements from different sensors on a moving robot.
 - The sensor measuremets consists of an IMU, a GNSS receiver, and a LiDAR, all of which provide measurements of varying reliability and at different rates.
