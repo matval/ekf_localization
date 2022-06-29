@@ -1,5 +1,5 @@
-## Extended Kalman Filter (EKF) Localization Algorithm
-# Vehicle State Estimation using Error-State Extended Kalman Filter
+# Extended Kalman Filter (EKF) Localization Algorithm
+## Vehicle State Estimation using Error-State Extended Kalman Filter
 
 <p>
 This project implements the Error-State Extended Kalman Filter (ES-EKF) to localize a vehicle (TerraSentia robot) in a crop.
@@ -28,7 +28,7 @@ States:
     - b_accel_x
     - b_accel_y
 
-# Running 
+## Running 
 
 - To run the simulation, simply run the **simulate_icp.py** script in the **datalog_play** folder.
 
