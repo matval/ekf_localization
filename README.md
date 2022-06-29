@@ -1,6 +1,20 @@
 # Extended Kalman Filter (EKF) Localization Algorithm
 ## Vehicle State Estimation using Error-State Extended Kalman Filter
 
+### Dependencies
+
+- ROS
+- Eigen3
+
+Follow [this link](http://wiki.ros.org/ROS/Installation) to install ROS
+
+
+To install Eigen3:
+'''
+sudo apt install libeigen3-dev
+'''
+
+
 <p>
 This project implements the Error-State Extended Kalman Filter (ES-EKF) to localize a vehicle (TerraSentia robot) in a crop.
 </p>
