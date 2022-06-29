@@ -1,4 +1,4 @@
-# Error State Extended Kalman Filter (ES-EKF)
+Extended Kalman Filter (EKF) Localization Algorithm
 Vehicle State Estimation using Error-State Extended Kalman Filter
 
 <p>
