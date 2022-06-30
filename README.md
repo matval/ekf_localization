@@ -16,8 +16,8 @@ sudo apt install libeigen3-dev
 
 ### This project implements the Extended Kalman Filter (EKF) to localize a vehicle using GPS, IMU and Wheel Encoders
 
-- The data set contains measurements from different sensors on a moving robot.
-- The sensor measuremets consists of an IMU, a GNSS receiver, and an IMU.
+- The dataset contains measurements from different sensors on a moving robot.
+- The sensor measuremets consist of data from an IMU, a GNSS receiver, and wheel encoders.
 
 - The goal is to implement a state estimator that fuses the available sensor measurements to provide a reasonable estimate of the vehicle's pose and velocity.
 
